@@ -2,109 +2,109 @@
 
 This file provides guidance to Claude Code when working with this repository.
 
-## Project Overview
+## 项目概述
 
-HaloLight BFF (Backend for Frontend) Gateway - A tRPC-based API layer that provides type-safe, unified API for HaloLight frontend applications.
+HaloLight BFF（Backend for Frontend）网关 - 基于 tRPC 的 API 层，为 HaloLight 前端应用提供类型安全、统一的 API。
 
-## Technology Stack
+## 技术栈
 
-- **Framework**: tRPC 11 + Express 5 + TypeScript
-- **Validation**: Zod
-- **Serialization**: SuperJSON
-- **Authentication**: JWT (jsonwebtoken)
-- **Logging**: Pino
-- **Security**: Helmet, CORS
-- **Runtime**: Node.js 20+
+- **框架**：tRPC 11 + Express 5 + TypeScript
+- **验证**：Zod
+- **序列化**：SuperJSON
+- **认证**：JWT (jsonwebtoken)
+- **日志**：Pino
+- **安全**：Helmet、CORS
+- **运行时**：Node.js 20+
 
-## Common Commands
+## 常用命令
 
 ```bash
-pnpm dev          # Development mode with hot reload (tsx watch)
-pnpm build        # TypeScript compilation
-pnpm start        # Production mode
-pnpm lint         # ESLint code checking
-pnpm format       # Prettier code formatting
-pnpm type-check   # TypeScript type checking
+pnpm dev          # 开发模式（热重载，tsx watch）
+pnpm build        # TypeScript 编译
+pnpm start        # 生产模式
+pnpm lint         # ESLint 代码检查
+pnpm format       # Prettier 代码格式化
+pnpm type-check   # TypeScript 类型检查
 ```
 
-## Project Structure
+## 项目结构
 
 ```
 src/
-├── index.ts              # Entry point
-├── server.ts             # Express server setup with tRPC adapter
-├── trpc.ts               # tRPC instance and procedures
-├── context.ts            # Context creation (user, traceId, services)
+├── index.ts              # 入口文件
+├── server.ts             # Express 服务器配置（含 tRPC 适配器）
+├── trpc.ts               # tRPC 实例和 procedures
+├── context.ts            # Context 创建（用户、traceId、服务）
 ├── schemas/
-│   ├── index.ts          # Schema exports
-│   └── common.ts         # Common Zod schemas (pagination, sorting, response)
+│   ├── index.ts          # Schema 导出
+│   └── common.ts         # 通用 Zod schemas（分页、排序、响应）
 ├── services/
-│   ├── index.ts          # Service exports
-│   ├── httpClient.ts     # HTTP client for backend services
-│   └── serviceRegistry.ts # Backend service registry
+│   ├── index.ts          # Service 导出
+│   ├── httpClient.ts     # 后端服务 HTTP 客户端
+│   └── serviceRegistry.ts # 后端服务注册表
 ├── routers/
-│   ├── index.ts          # Root router combining all routers
-│   ├── auth.ts           # Authentication (8 endpoints)
-│   ├── users.ts          # User management (8 endpoints)
-│   ├── dashboard.ts      # Dashboard statistics (9 endpoints)
-│   ├── permissions.ts    # Permission management (7 endpoints)
-│   ├── roles.ts          # Role management (8 endpoints)
-│   ├── teams.ts          # Team management (9 endpoints)
-│   ├── folders.ts        # Folder management (8 endpoints)
-│   ├── files.ts          # File management (9 endpoints)
-│   ├── documents.ts      # Document management (10 endpoints)
-│   ├── calendar.ts       # Calendar events (10 endpoints)
-│   ├── notifications.ts  # Notifications (7 endpoints)
-│   └── messages.ts       # Messaging/chat (9 endpoints)
+│   ├── index.ts          # 根路由（组合所有路由）
+│   ├── auth.ts           # 认证（8 个端点）
+│   ├── users.ts          # 用户管理（8 个端点）
+│   ├── dashboard.ts      # 仪表盘统计（9 个端点）
+│   ├── permissions.ts    # 权限管理（7 个端点）
+│   ├── roles.ts          # 角色管理（8 个端点）
+│   ├── teams.ts          # 团队管理（9 个端点）
+│   ├── folders.ts        # 文件夹管理（8 个端点）
+│   ├── files.ts          # 文件管理（9 个端点）
+│   ├── documents.ts      # 文档管理（10 个端点）
+│   ├── calendar.ts       # 日历事件（10 个端点）
+│   ├── notifications.ts  # 通知（7 个端点）
+│   └── messages.ts       # 消息/聊天（9 个端点）
 └── middleware/
-    └── auth.ts           # Authentication/authorization middleware
+    └── auth.ts           # 认证/授权中间件
 ```
 
-## Core Concepts
+## 核心概念
 
-### tRPC Architecture
+### tRPC 架构
 
 ```typescript
-// 1. Define context with services
+// 1. 定义包含服务的 context
 export async function createContext({ req, res }) {
   const user = extractUserFromToken(req);
   const traceId = req.headers['x-trace-id'] || randomUUID();
   return { req, res, user, traceId, services };
 }
 
-// 2. Initialize tRPC with context
+// 2. 使用 context 初始化 tRPC
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
 });
 
-// 3. Create procedures
+// 3. 创建 procedures
 export const publicProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(authMiddleware);
 export const adminProcedure = protectedProcedure.use(adminMiddleware);
 
-// 4. Create routers
+// 4. 创建 routers
 export const authRouter = router({
   login: publicProcedure
     .input(z.object({ email: z.string(), password: z.string() }))
     .mutation(async ({ input }) => {
-      // Implementation
+      // 实现逻辑
     }),
 });
 ```
 
-### Procedure Types
+### Procedure 类型
 
-- **publicProcedure**: No authentication required
-- **protectedProcedure**: Requires valid JWT token
-- **adminProcedure**: Requires admin role
+- **publicProcedure**：无需认证
+- **protectedProcedure**：需要有效的 JWT token
+- **adminProcedure**：需要管理员角色
 
-### Router Structure
+### Router 结构
 
-Each router follows a consistent pattern:
+每个 router 遵循一致的模式：
 
 ```typescript
 export const exampleRouter = router({
-  // Query - Read operation
+  // Query - 读操作
   list: protectedProcedure
     .input(z.object({ page: z.number().default(1), limit: z.number().default(10) }))
     .query(async ({ input, ctx }) => {
@@ -115,35 +115,35 @@ export const exampleRouter = router({
       };
     }),
 
-  // Mutation - Write operation
+  // Mutation - 写操作
   create: protectedProcedure
     .input(z.object({ name: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      return { code: 200, message: 'Created successfully', data: { id: 'new-id' } };
+      return { code: 200, message: '创建成功', data: { id: 'new-id' } };
     }),
 });
 ```
 
-## Available Routers (12 modules, 100+ endpoints)
+## 可用路由（12 个模块，100+ 端点）
 
-| Router | Endpoints | Description |
-|--------|-----------|-------------|
-| auth | 8 | Login, register, token refresh, logout, password management |
-| users | 8 | User CRUD, role/status management |
-| dashboard | 9 | Statistics, trends, activities, tasks |
-| permissions | 7 | Permission CRUD, tree structure, modules |
-| roles | 8 | Role CRUD, permission assignment |
-| teams | 9 | Team CRUD, member management |
-| folders | 8 | Folder CRUD, tree, move, breadcrumb |
-| files | 9 | File CRUD, upload, download, move, copy |
-| documents | 10 | Document CRUD, versions, sharing |
-| calendar | 10 | Event CRUD, attendees, RSVP |
-| notifications | 7 | List, unread count, mark read, delete |
-| messages | 9 | Conversations, messages, send, read status |
+| Router | 端点数 | 描述 |
+|--------|--------|------|
+| auth | 8 | 登录、注册、令牌刷新、登出、密码管理 |
+| users | 8 | 用户增删改查、角色/状态管理 |
+| dashboard | 9 | 统计数据、趋势、活动、任务 |
+| permissions | 7 | 权限增删改查、树结构、模块 |
+| roles | 8 | 角色增删改查、权限分配 |
+| teams | 9 | 团队增删改查、成员管理 |
+| folders | 8 | 文件夹增删改查、树、移动、面包屑 |
+| files | 9 | 文件增删改查、上传、下载、移动、复制 |
+| documents | 10 | 文档增删改查、版本、分享 |
+| calendar | 10 | 事件增删改查、参与者、RSVP |
+| notifications | 7 | 列表、未读数、标记已读、删除 |
+| messages | 9 | 对话、消息、发送、已读状态 |
 
-## Authentication Flow
+## 认证流程
 
-### JWT Token Structure
+### JWT Token 结构
 
 ```typescript
 interface JWTPayload {
@@ -159,52 +159,52 @@ interface JWTPayload {
 }
 ```
 
-### Token Usage
+### Token 使用
 
 ```typescript
-// Client sends token in Authorization header
+// 客户端在 Authorization 头中发送 token
 Authorization: Bearer <jwt-token>
 
-// Server extracts and verifies in context.ts
+// 服务器在 context.ts 中提取和验证
 const token = req.headers.authorization?.split(' ')[1];
 const user = jwt.verify(token, JWT_SECRET);
 ```
 
-### Permission System
+### 权限系统
 
-- `*` - All permissions (admin)
-- `module:*` - All operations on module (e.g., `users:*`)
-- `module:action` - Specific action (e.g., `users:view`, `users:create`)
+- `*` - 所有权限（管理员）
+- `module:*` - 模块的所有操作（例如：`users:*`）
+- `module:action` - 特定操作（例如：`users:view`、`users:create`）
 
-## Service Layer
+## 服务层
 
-### HTTP Client
+### HTTP 客户端
 
 ```typescript
-// Create client for backend service
+// 为后端服务创建客户端
 const client = serviceRegistry.getClient('python');
 
-// Make requests with automatic retry and timeout
+// 发起请求（自动重试和超时）
 const response = await client.get('/api/users', { query: { page: 1 } });
 const created = await client.post('/api/users', { name: 'John' });
 ```
 
-### Service Registry
+### 服务注册表
 
 ```typescript
-// Configure backend services via environment variables
+// 通过环境变量配置后端服务
 HALOLIGHT_API_PYTHON_URL=http://api-python:8000
 HALOLIGHT_API_BUN_URL=http://api-bun:3000
 HALOLIGHT_API_NESTJS_URL=http://api-nestjs:3001
 
-// Access in routers via context
-const client = ctx.services.getDefault(); // Uses highest priority service
+// 在 routers 中通过 context 访问
+const client = ctx.services.getDefault(); // 使用最高优先级服务
 const pythonClient = ctx.services.get('python');
 ```
 
-## Adding New Features
+## 添加新功能
 
-### 1. Create New Router
+### 1. 创建新 Router
 
 ```typescript
 // src/routers/products.ts
@@ -221,7 +221,7 @@ export const productsRouter = router({
     }).optional())
     .query(async ({ input, ctx }) => {
       const { page = 1, limit = 10, search } = input || {};
-      // Use ctx.services to call backend API
+      // 使用 ctx.services 调用后端 API
       const client = ctx.services.getDefault();
       const response = await client.get('/api/products', { query: { page, limit, search } });
       return { code: 200, message: 'success', data: response };
@@ -235,49 +235,49 @@ export const productsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const client = ctx.services.getDefault();
       const created = await client.post('/api/products', input);
-      return { code: 200, message: 'Product created', data: created };
+      return { code: 200, message: '产品已创建', data: created };
     }),
 });
 ```
 
-### 2. Register in Root Router
+### 2. 在根 Router 中注册
 
 ```typescript
 // src/routers/index.ts
 import { productsRouter } from './products';
 
 export const appRouter = router({
-  // ... existing routers
+  // ... 现有 routers
   products: productsRouter,
 });
 ```
 
-## Error Handling
+## 错误处理
 
-### tRPC Error Codes
+### tRPC 错误代码
 
 ```typescript
 import { TRPCError } from '@trpc/server';
 
-throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });      // 401
-throw new TRPCError({ code: 'FORBIDDEN', message: 'Insufficient permissions' });  // 403
-throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid input' });           // 400
-throw new TRPCError({ code: 'NOT_FOUND', message: 'Resource not found' });        // 404
-throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Server error' });  // 500
+throw new TRPCError({ code: 'UNAUTHORIZED', message: '未认证' });      // 401
+throw new TRPCError({ code: 'FORBIDDEN', message: '权限不足' });  // 403
+throw new TRPCError({ code: 'BAD_REQUEST', message: '无效输入' });           // 400
+throw new TRPCError({ code: 'NOT_FOUND', message: '资源未找到' });        // 404
+throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: '服务器错误' });  // 500
 ```
 
-## Response Format
+## 响应格式
 
-All API responses follow a consistent format:
+所有 API 响应遵循一致的格式：
 
 ```typescript
 interface APIResponse<T> {
-  code: number;        // HTTP status code
-  message: string;     // Human-readable message
-  data: T | null;      // Response data
+  code: number;        // HTTP 状态码
+  message: string;     // 人类可读消息
+  data: T | null;      // 响应数据
 }
 
-// Paginated response
+// 分页响应
 interface PaginatedResponse<T> {
   code: number;
   message: string;
@@ -291,25 +291,25 @@ interface PaginatedResponse<T> {
 }
 ```
 
-## Environment Variables
+## 环境变量
 
-### Required
+### 必需配置
 
 ```bash
-JWT_SECRET=your-secret-key        # Must be changed in production (32+ chars)
-PORT=3002                          # Server port
+JWT_SECRET=your-secret-key        # 生产环境必须修改（32+ 字符）
+PORT=3002                          # 服务器端口
 ```
 
-### Optional
+### 可选配置
 
 ```bash
-HOST=0.0.0.0                       # Server host
-NODE_ENV=development               # Environment
-CORS_ORIGIN=*                      # CORS allowed origins
-JWT_EXPIRES_IN=7d                  # Token expiration
-LOG_LEVEL=info                     # Logging level
+HOST=0.0.0.0                       # 服务器主机
+NODE_ENV=development               # 环境
+CORS_ORIGIN=*                      # CORS 允许的源
+JWT_EXPIRES_IN=7d                  # Token 过期时间
+LOG_LEVEL=info                     # 日志级别
 
-# Backend Services
+# 后端服务
 HALOLIGHT_API_PYTHON_URL=http://localhost:8000
 HALOLIGHT_API_BUN_URL=http://localhost:3000
 HALOLIGHT_API_JAVA_URL=http://localhost:8080
@@ -318,22 +318,22 @@ HALOLIGHT_API_NODE_URL=http://localhost:3003
 HALOLIGHT_API_GO_URL=http://localhost:8081
 ```
 
-## Database Integration (Future)
+## 数据库集成（未来）
 
-Currently using mock data. To integrate real database:
+当前使用模拟数据。集成真实数据库：
 
-1. **Install ORM** (Prisma recommended)
+1. **安装 ORM**（推荐 Prisma）
    ```bash
    pnpm add @prisma/client
    pnpm add -D prisma
    ```
 
-2. **Initialize Prisma**
+2. **初始化 Prisma**
    ```bash
    pnpx prisma init
    ```
 
-3. **Add to context**
+3. **添加到 context**
    ```typescript
    import { PrismaClient } from '@prisma/client';
    const prisma = new PrismaClient();
@@ -343,9 +343,9 @@ Currently using mock data. To integrate real database:
    }
    ```
 
-## Client Usage
+## 客户端使用
 
-### React with @tanstack/react-query
+### React 配合 @tanstack/react-query
 
 ```typescript
 import { createTRPCReact } from '@trpc/react-query';
@@ -355,7 +355,7 @@ const trpc = createTRPCReact<AppRouter>();
 
 function UserList() {
   const { data, isLoading } = trpc.users.list.useQuery({ page: 1 });
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <div>加载中...</div>;
   return <div>{data?.data.list.map(user => <div key={user.id}>{user.name}</div>)}</div>;
 }
 ```
@@ -363,7 +363,7 @@ function UserList() {
 ### Next.js App Router
 
 ```typescript
-// Server Component
+// 服务器组件
 import { createCaller } from '@trpc/server';
 import { appRouter } from './routers';
 
@@ -374,40 +374,40 @@ export default async function Page() {
 }
 ```
 
-## Security Best Practices
+## 安全最佳实践
 
-1. **Always validate input** with Zod schemas
-2. **Never expose sensitive data** in error messages (production)
-3. **Use HTTPS** in production
-4. **Implement rate limiting** to prevent abuse
-5. **Sanitize user input** to prevent injection attacks
-6. **Use secure JWT secrets** (at least 32 characters)
-7. **Enable CORS** only for trusted origins
-8. **Keep dependencies updated** regularly
+1. **始终验证输入** - 使用 Zod schemas
+2. **不暴露敏感数据** - 错误消息中不包含敏感信息（生产环境）
+3. **使用 HTTPS** - 生产环境必须
+4. **实施限流** - 防止滥用
+5. **清理用户输入** - 防止注入攻击
+6. **使用安全的 JWT 密钥** - 至少 32 字符
+7. **启用 CORS** - 仅针对信任的源
+8. **定期更新依赖** - 保持最新
 
-## Troubleshooting
+## 故障排查
 
-### Common Issues
+### 常见问题
 
-1. **Port already in use**: Change PORT in .env or kill the process
-2. **CORS errors**: Update CORS_ORIGIN in .env
-3. **Token verification fails**: Ensure JWT_SECRET matches between environments
-4. **Type errors**: Run `pnpm type-check` to identify issues
-5. **Build fails**: Check for unused variables (noUnusedLocals is enabled)
+1. **端口已被占用**：修改 .env 中的 PORT 或终止占用端口的进程
+2. **CORS 错误**：更新 .env 中的 CORS_ORIGIN
+3. **Token 验证失败**：确保 JWT_SECRET 在各环境中一致
+4. **类型错误**：运行 `pnpm type-check` 识别问题
+5. **构建失败**：检查未使用的变量（已启用 noUnusedLocals）
 
-## Contributing
+## 贡献指南
 
-1. Follow the existing code structure
-2. Add proper TypeScript types
-3. Validate all inputs with Zod
-4. Use consistent error handling with TRPCError
-5. Follow the response format convention
-6. Update documentation when adding features
+1. 遵循现有的代码结构
+2. 添加适当的 TypeScript 类型
+3. 使用 Zod 验证所有输入
+4. 使用 TRPCError 进行一致的错误处理
+5. 遵循响应格式约定
+6. 添加功能时更新文档
 
-## Resources
+## 资源
 
-- [tRPC Documentation](https://trpc.io/docs)
-- [Zod Documentation](https://zod.dev/)
-- [Express Documentation](https://expressjs.com/)
-- [JWT Best Practices](https://tools.ietf.org/html/rfc8725)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- [tRPC 文档](https://trpc.io/docs)
+- [Zod 文档](https://zod.dev/)
+- [Express 文档](https://expressjs.com/)
+- [JWT 最佳实践](https://tools.ietf.org/html/rfc8725)
+- [TypeScript 手册](https://www.typescriptlang.org/docs/)
