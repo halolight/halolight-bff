@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  bff:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: halolight-bff
+    env_file:
+      - .env
+    restart: unless-stopped
+    ports:
+      - '${PORT:-3002}:3002'
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3002
+      HOST: 0.0.0.0
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      # Backend service URLs
+      HALOLIGHT_API_GO_URL: ${HALOLIGHT_API_GO_URL}
+      HALOLIGHT_API_NODE_URL: ${HALOLIGHT_API_NODE_URL}
+      HALOLIGHT_API_PHP_URL: ${HALOLIGHT_API_PHP_URL}
+      HALOLIGHT_API_PYTHON_URL: ${HALOLIGHT_API_PYTHON_URL}
+      HALOLIGHT_API_BUN_URL: ${HALOLIGHT_API_BUN_URL}
+    networks:
+      - halolight-network
+
+networks:
+  halolight-network:
+    driver: bridge
